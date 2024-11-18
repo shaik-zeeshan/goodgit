@@ -166,13 +166,19 @@ program
 
 // Get git remote url from a repository dir
 const getGitRemoteURL = async () => {
-	const remoteURL = await $`git remote get-url origin`.text();
+	const remoteURL = await $`git remote get-url origin`.nothrow().text();
 	return remoteURL;
 };
 
 // Set git remote url in a repository dir
 const setGitRemoteURL = async (url: string) => {
-	await $`git remote set-url origin ${url}`.quiet();
+	const urlExists = await $`git remote get-url origin`.nothrow().text();
+	console.log(urlExists);
+	if (urlExists === "") {
+		await $`git remote add origin ${url.replaceAll("\n", "")}`.quiet();
+	} else {
+		await $`git remote set-url origin ${url.replaceAll("\n", "")}`.quiet();
+	}
 };
 
 // set user.name and user.email in the git config
@@ -187,6 +193,11 @@ program
 	.command("user")
 	.action(async () => {
 		let url = await getGitRemoteURL();
+
+		if (url === "") {
+			const answerURL = await input({ message: "Enter the repository URL" });
+			url = answerURL;
+		}
 
 		const users = getSSHFiles();
 
