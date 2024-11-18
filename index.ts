@@ -164,5 +164,52 @@ program
 		});
 	});
 
+// Get git remote url from a repository dir
+const getGitRemoteURL = async () => {
+	const remoteURL = await $`git remote get-url origin`.text();
+	return remoteURL;
+};
+
+// Set git remote url in a repository dir
+const setGitRemoteURL = async (url: string) => {
+	await $`git remote set-url origin ${url}`.quiet();
+};
+
+// set user.name and user.email in the git config
+const setGitUser = async (username: string, email: string) => {
+	await $`git config --local user.name ${username}`.quiet();
+	await $`git config --local user.email ${email}`.quiet();
+};
+
+// Command to set a user for the repository
+program
+	.command("set")
+	.command("user")
+	.action(async () => {
+		let url = await getGitRemoteURL();
+
+		const users = getSSHFiles();
+
+		if (users.length === 0) {
+			chalk.red("No SSH keys found in the .ssh folder");
+		}
+
+		const answer = await select<string>({
+			message: "Select the user",
+			choices: users,
+		});
+
+		if (!url.includes(`${answer}.github.com`)) {
+			url = url.replace("github.com", `${answer}.github.com`);
+			setGitRemoteURL(url);
+		}
+
+		const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
+
+		const { username, email } = goodgit[answer];
+
+		await setGitUser(username, email);
+	});
+
 // Parsing the arguments
 program.parse(process.argv);
