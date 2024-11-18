@@ -1,0 +1,20 @@
+{
+	"name": "goodgit",
+	"module": "index.ts",
+	"type": "module",
+	"bin": {
+		"goodgit": "./index.ts"
+	},
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@inquirer/prompts": "^7.0.1",
+		"chalk": "^5.3.0",
+		"commander": "^12.1.0",
+		"tasuku": "^2.0.1"
+	}
+}
