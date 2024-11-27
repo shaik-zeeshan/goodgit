@@ -73,71 +73,85 @@ const removeUserFromSSHConfig = async (ssh_key: string) => {
 };
 
 // Command to add a new user
-program.command("add").action(async () => {
-	if (!fs.existsSync(goodgitFile)) {
-		fs.writeFileSync(goodgitFile, JSON.stringify({}));
-	}
+program
+	.command("add")
+	.description("Add a new user")
+	.action(async () => {
+		if (!fs.existsSync(goodgitFile)) {
+			fs.writeFileSync(goodgitFile, JSON.stringify({}));
+		}
 
-	const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
+		const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
 
-	const users = getSSHFiles();
+		const users = getSSHFiles();
 
-	if (users.length === 0) {
-		chalk.red("No SSH keys found in the .ssh folder");
-	}
+		if (users.length === 0) {
+			chalk.red("No SSH keys found in the .ssh folder");
+		}
 
-	const answer = {
-		username: await input({ message: "Enter your username" }),
-		email: await input({ message: "Enter your email" }),
-		ssh_key: await select<string>({
-			message: "Select the SSH key",
-			choices: users,
-		}),
-	};
+		const answer = {
+			username: await input({ message: "Enter your username" }),
+			email: await input({ message: "Enter your email" }),
+			ssh_key: await select<string>({
+				message: "Select the SSH key",
+				choices: users,
+			}),
+		};
 
-	goodgit[answer.ssh_key] = answer;
+		goodgit[answer.ssh_key] = answer;
 
-	fs.writeFileSync(goodgitFile, JSON.stringify(goodgit, null, 2));
-	addUserToSSHConfig(answer);
-});
-
-// Command to list all users
-program.command("list").action(() => {
-	const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
-
-	console.table(goodgit);
-});
-
-// Command to remove a user
-program.command("remove").action(async () => {
-	const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
-
-	if (Object.keys(goodgit).length === 0) {
-		chalk.red("No users found in the .goodgit file");
-	}
-
-	const answer = await select<string>({
-		message: "Select the user to remove",
-		choices: Object.keys(goodgit),
+		fs.writeFileSync(goodgitFile, JSON.stringify(goodgit, null, 2));
+		addUserToSSHConfig(answer);
 	});
 
-	delete goodgit[answer];
+// Command to list all users
+program
+	.command("list")
+	.description("List all users")
+	.alias("ls")
+	.action(() => {
+		const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
 
-	fs.writeFileSync(goodgitFile, JSON.stringify(goodgit, null, 2));
-	removeUserFromSSHConfig(answer);
-});
+		console.table(goodgit);
+	});
+
+// Command to remove a user
+program
+	.command("remove")
+	.description("Remove a user")
+	.action(async () => {
+		const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
+
+		if (Object.keys(goodgit).length === 0) {
+			chalk.red("No users found in the .goodgit file");
+		}
+
+		const answer = await select<string>({
+			message: "Select the user to remove",
+			choices: Object.keys(goodgit),
+		});
+
+		delete goodgit[answer];
+
+		fs.writeFileSync(goodgitFile, JSON.stringify(goodgit, null, 2));
+		removeUserFromSSHConfig(answer);
+	});
 
 // Command to clone a repository
 program
 	.command("clone")
 	.argument("<repo>")
 	.argument("[out]")
-	.action(async (repo, out) => {
+	.description("Clone a repository")
+	.option("-o, --options <options>", "git clone options")
+	.action(async (repo, out, options) => {
 		const users = getSSHFiles();
 
 		if (users.length === 0) {
 			chalk.red("No SSH keys found in the .ssh folder");
 		}
+
+		const opts = `${options.options}`;
 
 		const answer = await select<string>({
 			message: "Select the user",
@@ -153,7 +167,7 @@ program
 
 			try {
 				// Clone the repository
-				await $`git clone--config user.name = ${username} --config user.email = ${email} ${repo.replace("github.com", `${answer}.github.com`)} ${out || ""} `;
+				await $`git clone --config user.name = ${username} --config user.email = ${email} ${opts || ""} ${repo.replace("github.com", `${answer}.github.com`)} ${out || ""} `;
 
 				setTitle("Repository cloned successfully");
 			} catch (error) {
@@ -191,6 +205,7 @@ const setGitUser = async (username: string, email: string) => {
 program
 	.command("set")
 	.command("user")
+	.description("Set a user for the repository")
 	.action(async () => {
 		let url = await getGitRemoteURL();
 
