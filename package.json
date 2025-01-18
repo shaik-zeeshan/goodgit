@@ -5,6 +5,9 @@
 	"bin": {
 		"goodgit": "./index.ts"
 	},
+	"scripts": {
+		"build": "bun build --compile --minify --sourcemap ./index.ts --outfile goodgit"
+	},
 	"devDependencies": {
 		"@types/bun": "latest"
 	},
