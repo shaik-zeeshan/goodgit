@@ -187,8 +187,7 @@ const getGitRemoteURL = async () => {
 // Set git remote url in a repository dir
 const setGitRemoteURL = async (url: string) => {
 	const urlExists = await $`git remote get-url origin`.nothrow().text();
-	console.log(urlExists);
-	if (urlExists === "") {
+	if (!urlExists.length) {
 		await $`git remote add origin ${url.replaceAll("\n", "")}`.quiet();
 	} else {
 		await $`git remote set-url origin ${url.replaceAll("\n", "")}`.quiet();
@@ -227,7 +226,7 @@ program
 
 		if (!url.includes(`${answer}.github.com`)) {
 			url = url.replace("github.com", `${answer}.github.com`);
-			setGitRemoteURL(url);
+			await setGitRemoteURL(url);
 		}
 
 		const goodgit = JSON.parse(fs.readFileSync(goodgitFile, "utf-8"));
